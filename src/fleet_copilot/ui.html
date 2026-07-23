@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Fleet Copilot</title>
+<style>
+  :root { --bg:#0f1419; --card:#1a2129; --acc:#4fa3ff; --txt:#dbe4ee; --mut:#8a97a5; }
+  * { box-sizing:border-box; }
+  body { margin:0; font:15px/1.5 system-ui,sans-serif; background:var(--bg); color:var(--txt); }
+  main { max-width:860px; margin:0 auto; padding:32px 20px; }
+  h1 { font-size:22px; } h1 span { color:var(--acc); }
+  .sub { color:var(--mut); margin-bottom:24px; }
+  .card { background:var(--card); border-radius:10px; padding:18px; margin-bottom:16px; }
+  label { display:block; color:var(--mut); font-size:13px; margin-bottom:6px; }
+  input,button,textarea { font:inherit; border-radius:8px; border:1px solid #2c3843; }
+  input,textarea { width:100%; padding:10px; background:#10161c; color:var(--txt); }
+  button { background:var(--acc); color:#08121e; border:0; padding:10px 18px;
+           font-weight:600; cursor:pointer; margin-top:10px; }
+  button:disabled { opacity:.5; }
+  pre { white-space:pre-wrap; background:#10161c; padding:12px; border-radius:8px;
+        font-size:13px; overflow-x:auto; }
+  .flag-pos { color:#ff7a7a; font-weight:700; } .flag-neg { color:#69d58c; font-weight:700; }
+  .row { display:flex; gap:10px; align-items:end; } .row > div { flex:1; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Fleet <span>Copilot</span></h1>
+  <div class="sub">APS predictive maintenance — XGBoost classifier + RAG + tool-calling agent</div>
+
+  <div class="card">
+    <div class="row">
+      <div><label>Vehicle ID (0–15999, test fleet)</label>
+        <input id="vid" type="number" value="0" min="0" max="15999"></div>
+      <div><button onclick="checkVehicle()">Check vehicle</button></div>
+    </div>
+    <div id="vout"></div>
+  </div>
+
+  <div class="card">
+    <label>Ask the agent — it will run the model, pull SHAP contributions, and cite the maintenance docs</label>
+    <textarea id="q" rows="2">Why is vehicle 12 flagged, and what should the workshop check first?</textarea>
+    <button id="askbtn" onclick="askAgent()">Ask agent</button>
+    <div id="aout"></div>
+  </div>
+</main>
+<script>
+async function checkVehicle() {
+  const id = document.getElementById('vid').value;
+  const out = document.getElementById('vout');
+  out.innerHTML = '<pre>loading…</pre>';
+  const p = await (await fetch(`/vehicles/${id}/prediction`)).json();
+  const e = await (await fetch(`/vehicles/${id}/explanation`)).json();
+  const cls = p.flagged ? 'flag-pos' : 'flag-neg';
+  const verdict = p.flagged ? 'FLAGGED — likely APS-related' : 'not flagged';
+  out.innerHTML = `<pre>P(APS failure) = ${p.probability_aps_failure}  (threshold ${p.threshold})
+<span class="${cls}">${verdict}</span>
+
+top contributions (SHAP):
+${e.top_contributions.map(c => `  ${c.feature.padEnd(16)} ${String(c.shap).padStart(8)}  value=${c.value}`).join('\n')}</pre>`;
+}
+async function askAgent() {
+  const btn = document.getElementById('askbtn');
+  const out = document.getElementById('aout');
+  btn.disabled = true;
+  out.innerHTML = '<pre>agent working…</pre>';
+  try {
+    const r = await fetch('/agent', {method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({question: document.getElementById('q').value})});
+    const d = await r.json();
+    const tools = (d.trace || []).map(t => `  → ${t.tool}(${JSON.stringify(t.input)})`).join('\n');
+    out.innerHTML = `<pre>tool calls:\n${tools}\n\n${d.answer || JSON.stringify(d)}</pre>`;
+  } finally { btn.disabled = false; }
+}
+</script>
+</body>
+</html>

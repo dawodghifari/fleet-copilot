@@ -1,0 +1,22 @@
+{
+  "final_model": "xgb_native",
+  "test_cost": 11010,
+  "fp": 401,
+  "fn": 14,
+  "test_pr_auc": 0.9291,
+  "threshold": 0.0025460422039031982,
+  "v1_test_cost": 14800,
+  "oof_selection": {
+    "winner": "native",
+    "imputed": {
+      "oof_cost": 40420,
+      "oof_pr_auc": 0.8948,
+      "threshold": 0.002344082109630108
+    },
+    "native": {
+      "oof_cost": 37920,
+      "oof_pr_auc": 0.9007,
+      "threshold": 0.0025460422039031982
+    }
+  }
+}

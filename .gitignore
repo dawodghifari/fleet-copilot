@@ -1,0 +1,12 @@
+data/raw/
+models/
+mlruns/
+mlflow.db
+chroma_db/
+.venv/
+.env
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+.DS_Store
+nohup.out
