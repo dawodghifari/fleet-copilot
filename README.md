@@ -59,11 +59,20 @@ and costs 187,500.
 Reference points: all-negative baseline 187,500; IDA 2016 challenge
 winner 9,920.
 
+The v2 cost decomposes as 401 false alarms and 14 missed failures:
+4,010 from workshop checks that found nothing, 7,000 from trucks
+that stranded. Roughly two thirds of the remaining cost sits in
+fourteen vehicles. Pushing the threshold lower to catch them would
+buy each avoided failure at the price of about fifty extra checks,
+which is the trade the cost metric is there to price.
+
 **What changed between v1 and v2.** The v1 threshold was tuned on a
 single validation split — a noisy estimate with only 200 positives.
 Re-selecting it on out-of-fold probabilities used all 1,000 positives and
-cut the test cost by 26%. An ablation also showed XGBoost's native
-missing-value handling beats imputation on this data, which makes sense:
+cut the test cost by 26%. The ablation was decided on out-of-fold cost
+before the test set was touched: native NaN routing 37,920 against
+median imputation plus indicators 40,420, with OOF PR-AUC 0.9007 against
+0.8948. Native handling wins on this data, which makes sense:
 missingness here is systematic (sensor absent on a vehicle variant), not
 random, and tree-based routing can exploit that directly. Isotonic
 calibration was considered and dropped — monotone recalibration cannot
@@ -80,10 +89,17 @@ embeddings (local, no API needed) → Chroma.
 Retrieval is evaluated, not assumed: 25 labeled questions, hit@4 and MRR,
 comparing two chunking strategies.
 
-| Strategy | hit@4 | MRR |
-|---|---|---|
-| fixed 800-char + overlap | 0.56 | 0.46 |
-| **section-aware** | **1.00** | **0.81** |
+| Strategy | Chunks | hit@4 | MRR |
+|---|---|---|---|
+| fixed 800-char + overlap | 610 | 0.56 | 0.46 |
+| **section-aware** | **19** | **1.00** | **0.81** |
+
+The chunk counts are most of the explanation. Section-aware chunking
+produced 19 chunks against 610, so on a knowledge base this small it
+retrieves near-whole documents and hit@4 has little room to fail. The
+eleven questions the fixed strategy missed are listed in
+`reports/rag_eval.md`, and they are mostly definitional ones whose
+answers sit under a heading the chunk boundary cut away.
 
 The first version of this eval had a bug worth admitting: relevance
 labels referenced section headings, which fixed-size chunks don't carry,
