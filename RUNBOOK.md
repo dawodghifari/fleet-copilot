@@ -31,7 +31,7 @@ Expected: v1 test cost 14,800 → v2 test cost 11,010 (FP=401, FN=14).
 python scripts/eval_rag.py     # chunking comparison -> reports/rag_eval.md
 ```
 
-Expected: sections hit@4 = 1.00 / MRR ≈ 0.81; fixed ≈ 0.56 / 0.46.
+Expected: sections hit@4 = 1.00 / MRR ≈ 0.81; fixed ≈ 0.96 / 0.77.
 
 ## Agent demo (needs API key)
 

@@ -91,21 +91,27 @@ comparing two chunking strategies.
 
 | Strategy | Chunks | hit@4 | MRR |
 |---|---|---|---|
-| fixed 800-char + overlap | 610 | 0.56 | 0.46 |
+| fixed 800-char + overlap | 14 | 0.96 | 0.77 |
 | **section-aware** | **19** | **1.00** | **0.81** |
 
-The chunk counts are most of the explanation. Section-aware chunking
-produced 19 chunks against 610, so on a knowledge base this small it
-retrieves near-whole documents and hit@4 has little room to fail. The
-eleven questions the fixed strategy missed are listed in
-`reports/rag_eval.md`, and they are mostly definitional ones whose
-answers sit under a heading the chunk boundary cut away.
+On a knowledge base this small the two strategies are close. Both
+produce chunks large enough to hold most of a section, so hit@4 has
+little room to fail either way. Sections lead on MRR and catch the one
+question the fixed strategy missed (the APS failure-modes question,
+listed in `reports/rag_eval.md`). Twenty-five questions cannot separate
+a gap that size, so the honest reading is a near-tie on this corpus,
+not a win.
 
-The first version of this eval had a bug worth admitting: relevance
-labels referenced section headings, which fixed-size chunks don't carry,
-so the fixed strategy scored a near-impossible 0.04. The judge now falls
-back to matching heading text inside the chunk body, making the
-comparison fair — sections still win decisively on this KB.
+The eval had two bugs worth admitting. First, relevance labels
+referenced section headings, which fixed-size chunks don't carry, so
+the fixed strategy scored a near-impossible 0.04; the judge now falls
+back to matching heading text inside the chunk body. Second, the
+fixed-size chunker never stopped at the end of a document: it stepped
+forward one character at a time and emitted about 150 near-duplicate
+tail fragments per file, 610 chunks where 14 were right. The fragments
+crowded the top-k and made fixed chunking look far worse than it is
+(0.56 / 0.46 before the fix). `tests/test_chunking.py` now pins the
+chunk count.
 
 ## Layer 3 — an agent grounded in the real model
 
@@ -133,6 +139,7 @@ python scripts/run_eda.py             # EDA report
 python scripts/train.py               # v1 baseline
 python scripts/train_v2_stage.py ...  # v2 (see RUNBOOK)
 python scripts/eval_rag.py            # retrieval evals (no API key)
+python -m pytest tests                # chunker tests (pip install pytest)
 python scripts/demo_agent.py          # full agent (needs ANTHROPIC_API_KEY in .env)
 cd src && uvicorn fleet_copilot.api:app   # web UI at :8000
 ```
@@ -155,6 +162,7 @@ src/fleet_copilot/   data, cost, rag, agent, api modules
 scripts/             fetch_data, run_eda, train, train_v2_stage, eval_rag, demo_agent
 knowledge_base/      4 markdown docs (the RAG corpus)
 evals/               25 labeled retrieval questions
+tests/               chunker regression tests
 reports/             EDA summary, model comparison, RAG eval, final results
 RUNBOOK.md           full reproduction commands
 ```

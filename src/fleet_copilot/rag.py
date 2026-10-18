@@ -49,6 +49,8 @@ def chunk_fixed(text: str, doc_id: str, size: int = 800,
         if piece:
             chunks.append(Chunk(doc_id, f"{doc_id}::fixed{i}", piece))
             i += 1
+        if end == len(text):  # the last chunk reached the end; stepping back by
+            break             # the overlap here would emit one tail copy per char
         start = max(end - overlap, start + 1)
     return chunks
 
