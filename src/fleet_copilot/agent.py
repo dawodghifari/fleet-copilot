@@ -138,11 +138,21 @@ Rules:
   diagnosis."""
 
 
-def run_agent(question: str, model: str = "claude-sonnet-5",
-              max_turns: int = 8) -> dict:
+# Override with FLEET_AGENT_MODEL (see .env.example).
+DEFAULT_AGENT_MODEL = "claude-sonnet-5"
+
+
+def run_agent(question: str, model: str | None = None, max_turns: int = 8,
+              tools: FleetTools | None = None) -> dict:
+    """Answer one question with the tool loop.
+
+    Pass `tools` to reuse an instance that has already loaded the model and the
+    fleet table (the API does); otherwise one is built for this call.
+    """
     import anthropic
 
-    tools = FleetTools()
+    model = model or os.environ.get("FLEET_AGENT_MODEL", DEFAULT_AGENT_MODEL)
+    tools = tools or FleetTools()
     client = anthropic.Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
     messages = [{"role": "user", "content": question}]
     trace = []

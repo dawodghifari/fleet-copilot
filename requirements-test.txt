@@ -1,6 +1,6 @@
 # What the unit tests need. Deliberately small: no torch, Chroma, XGBoost or
-# API key, so CI runs in seconds. The full stack is in requirements.txt.
+# API key, so CI runs in seconds. Versions match requirements.txt.
 pytest>=8.0
-pandas>=2.0
-numpy>=1.24
-joblib>=1.3
+pandas==2.3.3
+numpy==2.4.6
+joblib==1.5.3

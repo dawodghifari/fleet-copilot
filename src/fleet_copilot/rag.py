@@ -138,10 +138,15 @@ the provided context passages. Cite passages inline as [chunk_id]. If the
 context does not contain the answer, say so plainly — do not guess."""
 
 
+# Override with FLEET_ANSWER_MODEL (see .env.example).
+DEFAULT_ANSWER_MODEL = "claude-haiku-4-5-20251001"
+
+
 def answer(query: str, strategy: str = "sections", k: int = 4,
-           model: str = "claude-haiku-4-5-20251001") -> dict:
+           model: str | None = None) -> dict:
     import anthropic
 
+    model = model or os.environ.get("FLEET_ANSWER_MODEL", DEFAULT_ANSWER_MODEL)
     hits = retrieve(query, strategy, k)
     context = "\n\n".join(f"[{h['chunk_id']}]\n{h['text']}" for h in hits)
     client = anthropic.Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])

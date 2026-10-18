@@ -144,7 +144,7 @@ python scripts/train.py               # v1 baseline
 python scripts/train_v2_stage.py ...  # v2 (see RUNBOOK)
 python scripts/eval_rag.py            # retrieval evals (no API key)
 python -m pytest tests                # unit tests (pip install -r requirements-test.txt)
-python scripts/demo_agent.py          # full agent (needs ANTHROPIC_API_KEY in .env)
+python scripts/demo_agent.py          # full agent (cp .env.example .env, add ANTHROPIC_API_KEY)
 cd src && uvicorn fleet_copilot.api:app   # web UI at :8000
 ```
 
