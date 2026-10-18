@@ -76,13 +76,18 @@ class FleetTools:
     def explain_features(self, vehicle_id: int, top_n: int = 8) -> dict:
         """Top feature contributions via XGBoost's pred_contribs (SHAP values)."""
         row = self._prepare(self.store.get(vehicle_id))
-        booster = getattr(self.model, "get_booster", lambda: None)()
-        if booster is None:  # calibrated wrapper — use first inner estimator
-            inner = self.model.calibrated_classifiers_[0].estimator
-            booster = inner.get_booster()
         import xgboost as xgb
-        contribs = booster.predict(
-            xgb.DMatrix(row, missing=np.nan), pred_contribs=True)[0]
+        if hasattr(self.model, "named_steps"):
+            # v1 (or the imputed v2 candidate): a Pipeline whose final step is
+            # the classifier. Its earlier steps (median imputation) must run
+            # first, because that is the input the booster was trained on.
+            matrix = xgb.DMatrix(self.model[:-1].transform(row), missing=np.nan,
+                                 feature_names=self.feature_names)
+            booster = self.model[-1].get_booster()
+        else:
+            matrix = xgb.DMatrix(row, missing=np.nan)
+            booster = self.model.get_booster()
+        contribs = booster.predict(matrix, pred_contribs=True)[0]
         pairs = sorted(zip(self.feature_names, contribs[:-1]),
                        key=lambda p: -abs(p[1]))[:top_n]
         return {"vehicle_id": vehicle_id,
@@ -120,6 +125,10 @@ TOOL_SPECS = [
                                      "k": {"type": "integer"}},
                       "required": ["query"]}},
 ]
+
+# The only methods the model may call. getattr on a model-supplied name would
+# otherwise reach anything on FleetTools, private helpers included.
+TOOL_NAMES = frozenset(spec["name"] for spec in TOOL_SPECS)
 
 SYSTEM = """You are Fleet Copilot, a maintenance triage assistant for a
 heavy-truck fleet. You have tools to run the APS failure classifier, get
@@ -168,11 +177,13 @@ def run_agent(question: str, model: str | None = None, max_turns: int = 8,
         for block in resp.content:
             if block.type != "tool_use":
                 continue
-            fn = getattr(tools, block.name)
-            try:
-                out = fn(**block.input)
-            except Exception as e:  # surface tool errors to the model
-                out = {"error": str(e)}
+            if block.name not in TOOL_NAMES:
+                out = {"error": f"unknown tool: {block.name}"}
+            else:
+                try:
+                    out = getattr(tools, block.name)(**block.input)
+                except Exception as e:  # surface tool errors to the model
+                    out = {"error": str(e)}
             trace.append({"tool": block.name, "input": block.input,
                           "output": out})
             results.append({"type": "tool_result", "tool_use_id": block.id,
