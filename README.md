@@ -1,5 +1,7 @@
 # Fleet Copilot
 
+![CI](https://github.com/dawodghifari/fleet-copilot/actions/workflows/ci.yml/badge.svg)
+
 Predictive maintenance for heavy-truck fleets, in three connected layers:
 an XGBoost failure classifier trained on real Scania truck telematics
 data, a RAG knowledge layer over maintenance documentation, and a
@@ -130,7 +132,9 @@ distribution-shape signal without overclaiming the physical cause.
 
 ## Run it
 
-See [RUNBOOK.md](RUNBOOK.md). Quick version:
+See [RUNBOOK.md](RUNBOOK.md). The unit tests need none of the data, the trained model or an
+API key: `pip install -r requirements-test.txt && python -m pytest tests` runs 23 tests in a
+few seconds, and CI runs them on every push. Full pipeline, quick version:
 
 ```bash
 pip install -r requirements.txt
@@ -139,7 +143,7 @@ python scripts/run_eda.py             # EDA report
 python scripts/train.py               # v1 baseline
 python scripts/train_v2_stage.py ...  # v2 (see RUNBOOK)
 python scripts/eval_rag.py            # retrieval evals (no API key)
-python -m pytest tests                # chunker tests (pip install pytest)
+python -m pytest tests                # unit tests (pip install -r requirements-test.txt)
 python scripts/demo_agent.py          # full agent (needs ANTHROPIC_API_KEY in .env)
 cd src && uvicorn fleet_copilot.api:app   # web UI at :8000
 ```
@@ -162,7 +166,7 @@ src/fleet_copilot/   data, cost, rag, agent, api modules
 scripts/             fetch_data, run_eda, train, train_v2_stage, eval_rag, demo_agent
 knowledge_base/      4 markdown docs (the RAG corpus)
 evals/               25 labeled retrieval questions
-tests/               chunker regression tests
+tests/               unit tests: cost metric, preprocessing, chunkers, eval judge, agent tools
 reports/             EDA summary, model comparison, RAG eval, final results
 RUNBOOK.md           full reproduction commands
 ```
