@@ -3,13 +3,14 @@
 ## Setup (once)
 
 ```bash
-cd ~/Documents/Claude/Projects/Job\ Hunt/GitHub/fleet-copilot
+git clone https://github.com/dawodghifari/fleet-copilot.git && cd fleet-copilot
 python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 python scripts/fetch_data.py        # downloads the UCI dataset (~55 MB)
 ```
 
-`.env` must contain `ANTHROPIC_API_KEY=...` (already set up; gitignored).
+For the agent and `/ask`, copy `.env.example` to `.env` and set `ANTHROPIC_API_KEY`
+(`.env` is gitignored). Training, the retrieval evals and the tests need no key.
 
 ## Reproduce the ML results
 

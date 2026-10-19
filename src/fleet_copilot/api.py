@@ -71,7 +71,8 @@ def ask(q: Question):
 def agent(q: Question):
     if not os.environ.get("ANTHROPIC_API_KEY"):
         raise HTTPException(503, "ANTHROPIC_API_KEY not set")
-    return run_agent(q.question)
+    # Reuse the loaded model and fleet table instead of reloading per request.
+    return run_agent(q.question, tools=tools())
 
 
 _UI = Path(__file__).with_name("ui.html")
