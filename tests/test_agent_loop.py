@@ -93,3 +93,13 @@ def test_a_failing_tool_is_reported_not_raised(fake_anthropic):
     result = agent.run_agent("vehicle 99?", tools=make_tools())
     assert "error" in result["trace"][0]["output"]
     assert result["answer"] == "No such vehicle."
+
+
+def test_only_declared_tools_can_be_called(fake_anthropic, monkeypatch):
+    tools = make_tools()
+    called = []
+    monkeypatch.setattr(tools, "_prepare", lambda *a, **k: called.append("_prepare"))
+    fake_anthropic(tool_call("_prepare", {"row": None}), final("ok"))
+    result = agent.run_agent("try a private method", tools=tools)
+    assert called == []
+    assert result["trace"][0]["output"] == {"error": "unknown tool: _prepare"}

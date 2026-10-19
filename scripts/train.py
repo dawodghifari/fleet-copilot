@@ -2,8 +2,11 @@
 
 Protocol:
 - Stratified 80/20 train/validation split of the official training set.
-- Preprocessing decisions (dropped columns, indicator columns, medians)
-  learned on the training split only, applied unchanged elsewhere.
+- Dropped columns (>70% missing) and missing-indicator columns are chosen on
+  the full official training set before the split. They use no labels, so
+  this leaks nothing about the target. Medians are learned inside the
+  pipeline on the training split only. All of it is applied unchanged to
+  the test set.
 - Decision threshold tuned on the validation split for the official cost
   metric (FP=10, FN=500).
 - The official test set is touched exactly once, at the end, by the best
